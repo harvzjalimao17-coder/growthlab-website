@@ -7,9 +7,43 @@ const cases={
  operations:{type:'Automation System · Operations',title:'Internal Request Workflow',intro:'An internal workflow that organizes employee requests through submission, routing, approval, and completion.',tags:['Operations','Workflow Automation','Approvals','Notifications'],overviewTitle:'Replace scattered internal requests with one clear process.',overview:'The system gives employees a structured way to submit requests and automatically routes each request according to its type, priority, owner, or approval requirement.',capabilities:[['Request Intake','Capture complete request information in a structured format.'],['Routing','Send each request to the right person or department.'],['Approval Logic','Apply business rules before work is released.'],['Status Tracking','Make progress visible from submission to completion.'],['Notifications','Keep requesters and owners informed automatically.'],['Audit Trail','Maintain useful records of what happened and when.']],approach:'GrowthLab focuses on the handoffs that usually create delays. By defining who receives a request, what happens next, and when a notification or approval is needed, the workflow becomes predictable.',deliverables:['Request form','Routing logic','Approval workflow','Status tracking','Notifications','Process documentation']}};
 
 const modal=document.getElementById('caseModal');
-const closeModal=()=>{modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.classList.remove('modalOpen')};
-const openCase=(key)=>{const c=cases[key]; if(!c)return; document.getElementById('caseType').textContent=c.type;document.getElementById('caseTitle').textContent=c.title;document.getElementById('caseIntro').textContent=c.intro;document.getElementById('caseTags').innerHTML=c.tags.map(x=>'<span>'+x+'</span>').join('');document.getElementById('caseOverviewTitle').textContent=c.overviewTitle;document.getElementById('caseOverview').textContent=c.overview;document.getElementById('caseApproach').textContent=c.approach;document.getElementById('caseCapabilities').innerHTML=c.capabilities.map(x=>'<div><b>'+x[0]+'</b><p>'+x[1]+'</p></div>').join('');document.getElementById('caseDeliverables').innerHTML=c.deliverables.map(x=>'<span>'+x+'</span>').join('');modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('modalOpen')};
-document.querySelectorAll('.projectCard').forEach(card=>card.addEventListener('click',()=>openCase(card.dataset.project)));document.querySelector('.caseClose').addEventListener('click',closeModal);document.querySelector('.caseBackdrop').addEventListener('click',closeModal);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});document.querySelectorAll('[data-close="1"]').forEach(x=>x.addEventListener('click',()=>{closeModal()}));
+const casePanel=modal.querySelector('.casePanel');
+let lastFocusedBeforeModal=null;
+
+function getFocusableInModal(){
+  return Array.from(casePanel.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+    .filter(function(el){ return el.offsetParent !== null; });
+}
+
+function trapFocus(e){
+  if (e.key === 'Escape') { closeModal(); return; }
+  if (e.key !== 'Tab') return;
+  const focusable = getFocusableInModal();
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
+const closeModal=()=>{
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden','true');
+  document.body.classList.remove('modalOpen');
+  document.removeEventListener('keydown', trapFocus);
+  if (lastFocusedBeforeModal) {
+    lastFocusedBeforeModal.focus();
+    lastFocusedBeforeModal = null;
+  }
+};
+
+const openCase=(key, triggerEl)=>{const c=cases[key]; if(!c)return; lastFocusedBeforeModal = triggerEl || document.activeElement; document.getElementById('caseType').textContent=c.type;document.getElementById('caseTitle').textContent=c.title;document.getElementById('caseIntro').textContent=c.intro;document.getElementById('caseTags').innerHTML=c.tags.map(x=>'<span>'+x+'</span>').join('');document.getElementById('caseOverviewTitle').textContent=c.overviewTitle;document.getElementById('caseOverview').textContent=c.overview;document.getElementById('caseApproach').textContent=c.approach;document.getElementById('caseCapabilities').innerHTML=c.capabilities.map(x=>'<div><b>'+x[0]+'</b><p>'+x[1]+'</p></div>').join('');document.getElementById('caseDeliverables').innerHTML=c.deliverables.map(x=>'<span>'+x+'</span>').join('');modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('modalOpen');document.addEventListener('keydown', trapFocus);const focusable=getFocusableInModal();(focusable[0] || casePanel).focus();};
+document.querySelectorAll('.projectCard').forEach(card=>card.addEventListener('click',()=>openCase(card.dataset.project, card)));document.querySelector('.caseClose').addEventListener('click',closeModal);document.querySelector('.caseBackdrop').addEventListener('click',closeModal);document.querySelectorAll('[data-close="1"]').forEach(x=>x.addEventListener('click',()=>{closeModal()}));
 const observer=new IntersectionObserver(entries=>entries.forEach(e=>e.isIntersecting&&e.target.classList.add('show')),{threshold:.12});document.querySelectorAll('.reveal').forEach(x=>observer.observe(x));
 
 (function(){
